@@ -73,22 +73,25 @@ void bench_test(uintptr_t id, uint32_t* seed)
     uint32_t act = rand_r_32(seed) % 100;
 
     if (act < CFG.lookpct) {
-		MY_TM_BEGIN(atomic) {
-		//TM_BEGIN(atomic) {
+		//MY_TM_BEGIN(atomic) {
+		TM_BEGIN(atomic) {
             SET->lookup(val TM_PARAM);
         } TM_END;
+        //} MY_TM_END;
     }
     else if (act < CFG.inspct) {
-		MY_TM_BEGIN(atomic) {
-        //TM_BEGIN(atomic) {
+		//MY_TM_BEGIN(atomic) {
+        TM_BEGIN(atomic) {
             SET->insert(val TM_PARAM);
         } TM_END;
+        //} MY_TM_END;
     }
     else {
-		MY_TM_BEGIN(atomic) {
-        //TM_BEGIN(atomic) {
+		//MY_TM_BEGIN(atomic) {
+        TM_BEGIN(atomic) {
             SET->remove(val TM_PARAM);
         } TM_END;
+        //} MY_TM_END;
     }
 }
 

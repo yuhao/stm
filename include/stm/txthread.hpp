@@ -92,6 +92,11 @@ namespace stm
       uint64_t      end_txn_time;      // end of non-transactional work
       uint64_t      total_nontxn_time; // time on non-transactional work
 
+	  //YZ
+      /*** PER-THREAD FIELDS FOR ENABLING OUR ADAPTIVITY POLICIES */
+	  char current_tm[100]; // the id of the tm that the thread is currently running
+	  char killme_tm[100];  // the id of the tm that aborted the current tm
+
       /*** POINTERS TO INSTRUMENTATION */
 
       /**

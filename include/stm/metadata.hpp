@@ -73,6 +73,8 @@ namespace stm
   {
       volatile id_version_t v; // current version number or lockBit + ownerId
       volatile uintptr_t    p; // previous version number
+	  //YZ
+	  char tmid[100]; // the id of the tm that writes to this address most recently...
   };
 
   /**

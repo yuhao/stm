@@ -97,13 +97,17 @@ namespace {
           if (ivt <= tx->start_time) {
               // abort if cannot acquire
               if (!bcasptr(&o->v.all, ivt, tx->my_lock.all))
+			  {
+				  strcpy(tx->killme_tm, o->tmid);
                   tx->tmabort(tx);
+			  }
               // save old version to o->p, remember that we hold the lock
               o->p = ivt;
               tx->locks.insert(o);
           }
           // else if we don't hold the lock abort
           else if (ivt != tx->my_lock.all) {
+			  strcpy(tx->killme_tm, o->tmid);
               tx->tmabort(tx);
           }
       }
@@ -121,7 +125,11 @@ namespace {
       // release locks
       CFENCE;
       foreach (OrecList, i, tx->locks)
+	  {
+		  //YZ
+		  strcpy((*i)->tmid, tx->current_tm);
           (*i)->v.all = end_time;
+	  }
 
       // clean-up
       tx->r_orecs.reset();
@@ -153,6 +161,7 @@ namespace {
           tx->r_orecs.insert(o);
           return tmp;
       }
+	  strcpy(tx->killme_tm, o->tmid);
       tx->tmabort(tx);
       return NULL;
   }
@@ -186,6 +195,7 @@ namespace {
           tx->r_orecs.insert(o);
           return tmp;
       }
+	  strcpy(tx->killme_tm, o->tmid);
       tx->tmabort(tx);
       // unreachable
       return NULL;
@@ -257,6 +267,7 @@ namespace {
           // if unlocked and newer than start time, abort
           if ((ivt > tx->start_time) && (ivt != tx->my_lock.all))
 		  {
+	  		  strcpy(tx->killme_tm, (*i)->tmid);
               tx->tmabort(tx);
 		  }
       }

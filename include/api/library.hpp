@@ -58,7 +58,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stm/mod.h>
-
+#include <pthread.h>
 //YZ
 namespace stm
 {
@@ -101,27 +101,65 @@ namespace stm
 #define MY_TM_WRITE(var, val) stm::stm_write(&var, val, tx, &last_abort)
 #define MY_TM_PARAM , tx, &last_abort
 
-// fprintf(stdout, "tm: %s, tx %d: %ld %ld\n", tm, id, tm_hist[id][tm].abort,  tm_hist[id][tm].tot); 
-
-#define MY_TM_BEGIN(TYPE)                          \
+#define TM_BEGIN(TYPE)                          \
 {                                                       \
 	stm::TxThread* tx = (stm::TxThread*)stm::Self;          \
-	TM_SET_POLICY("LLT");	\
-	jmp_buf _jmpbuf;                                        \
 	static tm_hist_map tm_hist[100]; \
-	uint32_t abort_flags = setjmp(_jmpbuf);                 \
+	static unsigned long tm_abort[MAX_TM_NUM][MAX_TM_NUM];	\
+	static unsigned long active_tm[MAX_TM_NUM];	\
 	char tm[100]; \
 	sprintf(tm, "%s#%d", __func__, __LINE__); \
-	if(abort_flags) tm_hist[tx->id][tm].abort++;	\
+	strcpy(tx->current_tm, tm);	\
+	my_hash(tm);	\
+	uint32_t cur_tm = ret_val;	\
+	jmp_buf _jmpbuf;                                        \
+	static pthread_mutex_t lock1, lock2, lock3;	\
+	uint32_t abort_flags = setjmp(_jmpbuf);                 \
+	if(abort_flags)	\
+	{	\
+		tm_hist[tx->id][tm].abort++;	\
+		pthread_mutex_lock(&lock3);			\
+		tm_abort[cur_tm][abort_flags]++;	\
+		pthread_mutex_unlock(&lock3);			\
+		pthread_mutex_lock(&lock2);			\
+		active_tm[cur_tm]--;	\
+		pthread_mutex_unlock(&lock2);			\
+	}	\
 	tm_hist[tx->id][tm].tot++;								\
+	pthread_mutex_lock(&lock1);			\
+	while(1) \
+	{	\
+		bool can_enter = true;	\
+		for(int i = 0;i < MAX_TM_NUM;i++)	\
+		{	\
+			pthread_mutex_lock(&lock3);			\
+			unsigned long temp_abort = tm_abort[cur_tm][i];	\
+			pthread_mutex_unlock(&lock3);			\
+			pthread_mutex_lock(&lock2);			\
+			unsigned long temp_active = active_tm[i];	\
+			pthread_mutex_unlock(&lock2);			\
+			if(temp_abort && temp_active )	\
+			{	\
+				can_enter = false;	\
+				break;	\
+			}	\
+		}	\
+		if(can_enter) break;	\
+	}	\
+	pthread_mutex_lock(&lock2);			\
+	active_tm[cur_tm]++;	\
+	pthread_mutex_unlock(&lock2);			\
+	pthread_mutex_unlock(&lock1);			\
 	stm::begin(tx, &_jmpbuf, abort_flags);        	\
 	CFENCE;                                                 \
 {
 
-#define MY_TM_END                               \
+#define TM_END                               \
 }                                           \
-	stm::commit(tx, &last_abort);                            \
-	last_abort = false;							\
+	stm::commit(tx);                            \
+	pthread_mutex_lock(&lock2);			\
+	active_tm[cur_tm]--;	\
+	pthread_mutex_unlock(&lock2);			\
 }
 }
 
@@ -328,7 +366,7 @@ namespace stm
 /**
  *  This is the way to start a transaction
  */
-#define TM_BEGIN(TYPE)                                      \
+#define MY_TM_BEGIN(TYPE)                                      \
     {                                                       \
     stm::TxThread* tx = (stm::TxThread*)stm::Self;          \
     jmp_buf _jmpbuf;                                        \
@@ -341,7 +379,7 @@ namespace stm
  *  This is the way to commit a transaction.  Note that these macros weakly
  *  enforce lexical scoping
  */
-#define TM_END                                  \
+#define MY_TM_END                                  \
     }                                           \
     stm::commit(tx);                            \
     }

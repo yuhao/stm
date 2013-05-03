@@ -16,6 +16,8 @@
 #include "algs/tml_inline.hpp"
 #include "algs/algs.hpp"
 #include "inst.hpp"
+//YZ
+#include <stm/mod.h>
 
 using namespace stm;
 
@@ -45,7 +47,10 @@ namespace
 #endif
                                                );
       // need to null out the scope
-      longjmp(*scope, 1);
+	  //YZ:
+	  my_hash(tx->killme_tm); 
+      uint32_t killme_tm_id = ret_val; 
+      longjmp(*scope, killme_tm_id);
   }
 } // (anonymous namespace)
 

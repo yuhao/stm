@@ -62,20 +62,12 @@ namespace stm
       stms[new_alg].switcher();
       CFENCE;
 
-      // set per-thread pointers
-	  if(threadcount.val != 0)
-	  {
-      	threads[threadcount.val - 1]->tmread     = stms[new_alg].read;
-      	threads[threadcount.val - 1]->tmwrite    = stms[new_alg].write;
-      	threads[threadcount.val - 1]->tmcommit   = stms[new_alg].commit;
-      	threads[threadcount.val - 1]->consec_aborts  = 0;
-	  }
-      //for (unsigned i = 0; i < threadcount.val; ++i) {
-      //    	threads[i]->tmread     = stms[new_alg].read;
-      //    	threads[i]->tmwrite    = stms[new_alg].write;
-      //    	threads[i]->tmcommit   = stms[new_alg].commit;
-      //    	threads[i]->consec_aborts  = 0;
-      //}
+      for (unsigned i = 0; i < threadcount.val; ++i) {
+          	threads[i]->tmread     = stms[new_alg].read;
+          	threads[i]->tmwrite    = stms[new_alg].write;
+          	threads[i]->tmcommit   = stms[new_alg].commit;
+          	threads[i]->consec_aborts  = 0;
+      }
 
       TxThread::tmrollback = stms[new_alg].rollback;
       TxThread::tmirrevoc  = stms[new_alg].irrevoc;
