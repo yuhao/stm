@@ -459,10 +459,10 @@
 #    undef TM_BEGIN
 #    undef TM_END
 //YZ
-//#    define TM_BEGIN()                  STM_BEGIN_WR()
-//#    define TM_BEGIN_RO()               STM_BEGIN_RD()
-#    define TM_BEGIN()                  MY_STM_BEGIN_WR()
-#    define TM_BEGIN_RO()               MY_STM_BEGIN_RD()
+#    define TM_BEGIN()                  STM_BEGIN_WR()
+#    define TM_BEGIN_RO()               STM_BEGIN_RD()
+//#    define TM_BEGIN()                  MY_STM_BEGIN_WR()
+//#    define TM_BEGIN_RO()               MY_STM_BEGIN_RD()
 #    define TM_END()                    STM_END()
 #    define TM_RESTART()                STM_RESTART()
 

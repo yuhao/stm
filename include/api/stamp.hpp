@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stm/mod.h>
+#include <pthread.h>
+#include <stm/txthread.hpp>
 
 #ifndef API_STAMP_HPP__
 #define API_STAMP_HPP__
@@ -68,24 +70,70 @@ inline void tx_safe_non_tx_free(void * ptr)
  *  The begin and commit instrumentation are straightforward
  */
 //YZ
-#define MY_STM_BEGIN_WR()                                                  \
-    {                                                                   \
-    	jmp_buf jmpbuf_;                                                    \
-		static tm_hist_map tm_hist[100]; \
-    	uint32_t abort_flags = setjmp(jmpbuf_);                             \
-		char tm[100]; \
-		sprintf(tm, "%s#%d", __func__, __LINE__); \
-		long int id = thread_getId(); \
-		if(abort_flags) tm_hist[id][tm].abort++;	\
-		tm_hist[id][tm].tot++;								\
-		fprintf(stdout, "tm: %s, tid %ld: %ld %ld\n", tm, id, tm_hist[id][tm].abort,  tm_hist[id][tm].tot); \
-    	begin(static_cast<stm::TxThread*>(STM_SELF), &jmpbuf_, abort_flags);\
-    	CFENCE;                                                             \
-    {
-
-#define MY_STM_BEGIN_RD() MY_STM_BEGIN_WR()
-
 #define STM_BEGIN_WR()                                                  \
+{                                                                   \
+	stm::TxThread* tx = (stm::TxThread*)stm::Self;          \
+	static tm_hist_map tm_hist[100]; \
+	static unsigned long tm_abort[MAX_TM_NUM][MAX_TM_NUM];	\
+	static unsigned long active_tm[MAX_TM_NUM];	\
+	char tm[100]; \
+	sprintf(tm, "%s#%d", __func__, __LINE__); \
+	strcpy(tx->current_tm, tm);	\
+	my_hash(tm);	\
+	uint32_t cur_tm = ret_val;	\
+	jmp_buf _jmpbuf;                                        \
+	static pthread_mutex_t lock1, lock2, lock3;	\
+	static unsigned long global_tm_tot = 0;	\
+	uint32_t abort_flags = setjmp(_jmpbuf);                 \
+	if(abort_flags)	\
+	{	\
+		tm_hist[tx->id][tm].abort++;	\
+		pthread_mutex_lock(&lock3);			\
+		tm_abort[cur_tm][abort_flags]++;	\
+		pthread_mutex_unlock(&lock3);			\
+		pthread_mutex_lock(&lock2);			\
+		active_tm[cur_tm]--;	\
+		pthread_mutex_unlock(&lock2);			\
+	}	\
+	tm_hist[tx->id][tm].tot++;								\
+	global_tm_tot++;	\
+	pthread_mutex_lock(&lock1);			\
+	while(1) \
+	{	\
+		bool can_enter = true;	\
+		for(int i = 0;i < MAX_TM_NUM;i++)	\
+		{	\
+			pthread_mutex_lock(&lock3);			\
+			unsigned long temp_abort = tm_abort[cur_tm][i];	\
+			pthread_mutex_unlock(&lock3);			\
+			pthread_mutex_lock(&lock2);			\
+			unsigned long temp_active = active_tm[i];	\
+			pthread_mutex_unlock(&lock2);			\
+			if(temp_abort / global_tm_tot  > 0.5 && temp_active )	\
+			{	\
+				can_enter = false;	\
+				break;	\
+			}	\
+		}	\
+		if(can_enter) break;	\
+	}	\
+	pthread_mutex_lock(&lock2);			\
+	active_tm[cur_tm]++;	\
+	pthread_mutex_unlock(&lock2);			\
+	pthread_mutex_unlock(&lock1);			\
+	stm::begin(tx, &_jmpbuf, abort_flags);        	\
+	CFENCE;                                                 \
+{
+
+#define STM_END()                                   \
+}                                               \
+	stm::commit(tx);                            \
+	pthread_mutex_lock(&lock2);			\
+	active_tm[cur_tm]--;	\
+	pthread_mutex_unlock(&lock2);			\
+}
+
+#define X_STM_BEGIN_WR()                                                  \
     {                                                                   \
     jmp_buf jmpbuf_;                                                    \
     uint32_t abort_flags = setjmp(jmpbuf_);                             \
@@ -93,7 +141,7 @@ inline void tx_safe_non_tx_free(void * ptr)
     CFENCE;                                                             \
     {
 
-#define STM_END()                                   \
+#define X_STM_END()                                   \
     }                                               \
     commit(static_cast<stm::TxThread*>(STM_SELF));  \
     }
