@@ -28,6 +28,9 @@
 #include "stm/ValueList.hpp"
 #include "WBMMPolicy.hpp"
 
+//YZ
+#include <time.h>
+#include <sys/time.h>
 namespace stm
 {
   /**
@@ -96,6 +99,11 @@ namespace stm
       /*** PER-THREAD FIELDS FOR ENABLING OUR ADAPTIVITY POLICIES */
 	  char current_tm[100]; // the id of the tm that the thread is currently running
 	  char killme_tm[100];  // the id of the tm that aborted the current tm
+      /*** PER-THREAD FIELDS FOR ENABLING OVERHEAD PROFILING*/
+	  struct timeval cache_start, cache_end, wait_start, wait_end;
+	  double cache_overhead, wait_overhead;
+      /*** PER-THREAD FIELDS FOR ENABLING EARLY-ABORT PROFILING*/
+	  uint32_t		early_abort;
 
       /*** POINTERS TO INSTRUMENTATION */
 

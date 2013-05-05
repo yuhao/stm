@@ -162,6 +162,8 @@ namespace {
           return tmp;
       }
 	  strcpy(tx->killme_tm, o->tmid);
+	  //YZ
+	  tx->early_abort++;
       tx->tmabort(tx);
       return NULL;
   }
@@ -196,6 +198,8 @@ namespace {
           return tmp;
       }
 	  strcpy(tx->killme_tm, o->tmid);
+	  //YZ
+	  tx->early_abort++;
       tx->tmabort(tx);
       // unreachable
       return NULL;

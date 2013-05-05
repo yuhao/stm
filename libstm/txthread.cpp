@@ -80,7 +80,11 @@ namespace stm
         cm_ts(INT_MAX),
         cf((filter_t*)FILTER_ALLOC(sizeof(filter_t))),
         nanorecs(64), begin_wait(0), strong_HG(),
-        irrevocable(false)
+        irrevocable(false),
+		//YZ
+		cache_overhead(0),
+		wait_overhead(0),
+		early_abort(0)
   {
       // prevent new txns from starting.
       while (true) {
@@ -216,11 +220,15 @@ namespace stm
       uint32_t rw_txns      = 0;                // rw commits
       uint32_t ro_txns      = 0;                // ro commits
       for (uint32_t i = 0; i < threadcount.val; i++) {
-          std::cout << "Thread: "       << threads[i]->id
-                    << "; RW Commits: " << threads[i]->num_commits
-                    << "; RO Commits: " << threads[i]->num_ro
-                    << "; Aborts: "     << threads[i]->num_aborts
-                    << "; Restarts: "   << threads[i]->num_restarts
+          std::cout << "Thread: "        << threads[i]->id
+                    << "; RW Commits: "  << threads[i]->num_commits
+                    << "; RO Commits: "  << threads[i]->num_ro
+                    << "; Aborts: "      << threads[i]->num_aborts
+                    << "; Early Aborts: "    << threads[i]->early_abort
+                    << "; Restarts: "    << threads[i]->num_restarts
+					//YZ
+                    //<< "; Cache Overhead(s): " << threads[i]->cache_overhead
+                    //<< "; Wait Overhead(s): " << threads[i]->wait_overhead
                     << std::endl;
           threads[i]->abort_hist.dump();
           rw_txns += threads[i]->num_commits;

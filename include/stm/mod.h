@@ -2,13 +2,23 @@
 #define __OUR_MOD__
 
 #include <map>
-
+#include <pthread.h>
 #define MAX_TM_NUM 100
+#define MAX_THD_NUM 100
+#define CACHE_WAY 8
+#define MNUMBER 8899174
 
 typedef struct tm_hist
 {
 	unsigned long tot;
 	unsigned long abort;
+	pthread_mutex_t loc;
+	tm_hist()
+	{
+		tot=0;
+		abort=0;
+		pthread_mutex_init(&loc,NULL);
+	}
 } tm_hist_t;
 
 typedef	struct thread_tm
@@ -16,6 +26,21 @@ typedef	struct thread_tm
 	void *i;
 	int n_t;
 } thread_tm_t;
+
+struct tm_cache
+{
+	unsigned int data[CACHE_WAY];
+	int tag[CACHE_WAY];
+	pthread_mutex_t loc;
+	tm_cache()
+	{
+		for(int i=0;i<CACHE_WAY;i++){
+			data[i]=MNUMBER;
+			tag[i]=i;
+		}
+		pthread_mutex_init(&loc,NULL);
+	}
+};
 
 typedef std::map<char *, tm_hist_t> tm_hist_map;
 
