@@ -4,7 +4,7 @@
 #include <map>
 #include <pthread.h>
 #define MAX_TM_NUM 100
-#define MAX_THD_NUM 100
+#define MAX_THD_NUM 1024
 #define CACHE_WAY 8
 #define MNUMBER 8899174
 

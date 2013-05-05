@@ -179,7 +179,6 @@ inline void tx_safe_non_tx_free(void * ptr)
 		pthread_mutex_unlock(&lock2);			\
 	}	\
 	pthread_mutex_lock(&lock1);			\
-	gettimeofday(&tx->start, NULL);	\
 	while(1) \
 	{	\
 		bool can_enter = true;	\
@@ -199,8 +198,6 @@ inline void tx_safe_non_tx_free(void * ptr)
 		}	\
 		if(can_enter) break;	\
 	}	\
-	gettimeofday(&tx->end, NULL);	\
-	tx->tot_overhead += (((double)(tx->end).tv_sec * 1000000.0 + (double)(tx->end).tv_usec) - ((double)(tx->start).tv_sec * 1000000.0 + (double)(tx->start).tv_usec)) / 1000000.0;	\
 	pthread_mutex_lock(&lock2);			\
 	active_tm[cur_tm]++;	\
 	pthread_mutex_unlock(&lock2);			\
@@ -230,7 +227,6 @@ inline void tx_safe_non_tx_free(void * ptr)
 	if(abort_flags)	\
 	{	\
 		pthread_mutex_lock(&((ccache[cur_tm]).loc));			\
-		gettimeofday(&tx->cache_start, NULL);	\
 		int way=-1;\
 		for(int i=0;i<CACHE_WAY;i++){\
 				if((ccache[cur_tm]).data[i]==abort_flags){\
@@ -253,15 +249,12 @@ inline void tx_safe_non_tx_free(void * ptr)
 				}\
 		}\
 		(ccache[cur_tm]).tag[way]=0;\
-		gettimeofday(&tx->cache_end, NULL);	\
-		tx->cache_overhead += (((double)(tx->cache_end).tv_sec * 1000000.0 + (double)(tx->cache_end).tv_usec) - ((double)(tx->cache_start).tv_sec * 1000000.0 + (double)(tx->cache_start).tv_usec)) / 1000000.0;	\
 		pthread_mutex_unlock(&((ccache[cur_tm]).loc));			\
 		pthread_mutex_lock(&lock2);			\
 		active_tm[cur_tm]--;	\
 		pthread_mutex_unlock(&lock2);			\
 	}	\
 	pthread_mutex_lock(&lock1);			\
-	gettimeofday(&tx->wait_start, NULL);	\
 	while(1) \
 	{	\
 		bool can_enter = true;	\
@@ -281,8 +274,6 @@ inline void tx_safe_non_tx_free(void * ptr)
 		}	\
 		if(can_enter) break;	\
 	}	\
-	gettimeofday(&tx->wait_end, NULL);	\
-	tx->wait_overhead += (((double)(tx->wait_end).tv_sec * 1000000.0 + (double)(tx->wait_end).tv_usec) - ((double)(tx->wait_start).tv_sec * 1000000.0 + (double)(tx->wait_start).tv_usec)) / 1000000.0;	\
 	pthread_mutex_lock(&lock2);			\
 	active_tm[cur_tm]++;	\
 	pthread_mutex_unlock(&lock2);			\
