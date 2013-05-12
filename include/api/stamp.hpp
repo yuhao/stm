@@ -78,7 +78,7 @@ inline void tx_safe_non_tx_free(void * ptr)
 //gettimeofday(&tx->cache_end, NULL);
 //tx->cache_overhead += (((double)(tx->cache_end).tv_sec * 1000000.0 + (double)(tx->cache_end).tv_usec) - ((double)(tx->cache_start).tv_sec * 1000000.0 + (double)(tx->cache_start).tv_usec)) / 1000000.0;
 
-#define STM_BEGIN_WR()                                                  \
+#define TLev_STM_BEGIN_WR()                                                  \
 {                                                                   \
 	stm::TxThread* tx = (stm::TxThread*)stm::Self;          \
 	static tm_hist_map tm_hist[MAX_THD_NUM]; \
@@ -138,7 +138,7 @@ inline void tx_safe_non_tx_free(void * ptr)
 				pthread_mutex_lock(&lock2);			\
 				unsigned long num_active = active_tm[abort_local];	\
 				pthread_mutex_unlock(&lock2);			\
-				if((abort_local!=MNUMBER)&&(abort_local && num_active ))	\
+				if((abort_local != MNUMBER) && num_active)	\
 				{	\
 					can_enter = false;	\
 					break;	\
@@ -210,7 +210,7 @@ inline void tx_safe_non_tx_free(void * ptr)
 //gettimeofday(&tx->wait_end, NULL);
 //tx->wait_overhead += (((double)(tx->wait_end).tv_sec * 1000000.0 + (double)(tx->wait_end).tv_usec) - ((double)(tx->wait_start).tv_sec * 1000000.0 + (double)(tx->wait_start).tv_usec)) / 1000000.0;
 
-#define LRC_STM_BEGIN_WR()                                                  \
+#define STM_BEGIN_WR()                                                  \
 {                                                                   \
 	stm::TxThread* tx = (stm::TxThread*)stm::Self;          \
 	static tm_hist_map tm_hist[MAX_THD_NUM]; \
@@ -266,7 +266,7 @@ inline void tx_safe_non_tx_free(void * ptr)
 			pthread_mutex_lock(&lock2);			\
 			unsigned long num_active = active_tm[abort_local];	\
 			pthread_mutex_unlock(&lock2);			\
-			if((abort_local!=MNUMBER)&&(abort_local && num_active ))	\
+			if((abort_local != MNUMBER) && num_active)	\
 			{	\
 				can_enter = false;	\
 				break;	\
